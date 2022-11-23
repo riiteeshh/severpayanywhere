@@ -1,14 +1,9 @@
-// void main() {
-// var x = 'topup:9865762048:50';
-// var y = x.split(":"); // o/p:[topup, 9865762048, 50]
-// print(x.split(":")); //o/p:9865762048
-// print(y[1]); //using while taking sms
-// }
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:telephony/telephony.dart';
 
 void main() async {
@@ -99,7 +94,7 @@ class _HomeState extends State<Home> {
                       //     .update({'balance': subtractedbl});
                       String number = '*422*$securitycode*$mobile*$money#';
                       print('topupntc');
-                      launchUrl(Uri(scheme: 'tel', path: number));
+                      await FlutterPhoneDirectCaller.callNumber(number);
                     } else if (y[1].startsWith('980') ||
                         y[1].startsWith('981') ||
                         y[1].startsWith('982')) {
@@ -111,7 +106,7 @@ class _HomeState extends State<Home> {
                       //     .update({'balance': subtractedbl});
                       String number = '*17122*$mobile*$money#';
                       print('topupncell');
-                      launchUrl(Uri(scheme: 'tel', path: number));
+                      await FlutterPhoneDirectCaller.callNumber(number);
                     } else {
                       String message =
                           'Sorry! The number provided can\'t be top-uped. Please provide a valid number.'
