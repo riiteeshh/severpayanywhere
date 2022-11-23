@@ -51,6 +51,7 @@ class _HomeState extends State<Home> {
         print(message.date);
         sms = message.body.toString();
         print('data:$sms');
+        var securitycode = '123478';
         var sendernumber = message.address;
         var x = sms;
         var y = x.split(":"); // o/p:[topup, 9865762048, 50]
@@ -58,45 +59,116 @@ class _HomeState extends State<Home> {
           print(y.length);
           print(x.split(":")); //o/p:9865762048
           String sentmoney = y[2];
-          await dbref
-              .where('mobilenumber', isEqualTo: y[1])
-              .get()
-              .then((QuerySnapshot querySnapshot) {
-            querySnapshot.docs.forEach((reciever) async {
-              if (reciever.exists) {
-                print('reciever exist');
-                String recieverid = await reciever.id;
-                String recievername = await reciever['name'];
-                num recieverbalance = await reciever['balance'];
-                print(recieverid);
-                print(recievername);
-                await dbref
-                    .where('mobilenumber', isEqualTo: sendernumber)
-                    .get()
-                    .then((QuerySnapshot querySnapshot) {
-                  querySnapshot.docs.forEach((sender) async {
-                    if (sender.exists) {
-                      print('sender exist');
-                      String sendername = await sender['name'];
-                      num senderbalance = await sender['balance'];
-                      String senderid = await sender.id;
-                      print(senderid);
-                      print(sendername);
-                      if (senderbalance < int.parse(y[2])) {
-                        String message =
-                            'Dear $sendername, \nYou have no sufficient balance in your wallet.'
-                            'Please recharge.\nThankYou.';
-                        List<String> recipents = [sendernumber.toString()];
 
-                        String _result = await sendSMS(
-                                message: message,
-                                recipients: recipents,
-                                sendDirect: true)
-                            .catchError((onError) {
-                          print(onError);
-                        });
-                      } else if (senderbalance >= int.parse(y[2])) {
-                        if (y[0] == 'transaction') {
+          if (y[0] == 'topup') {
+            await dbref
+                .where('mobilenumber', isEqualTo: sendernumber)
+                .get()
+                .then((QuerySnapshot querySnapshot) {
+              querySnapshot.docs.forEach((senderbl) async {
+                if (senderbl.exists) {
+                  String sendernamebl = await senderbl['name'];
+                  num senderbalancebl = await senderbl['balance'];
+                  String senderidbl = await senderbl.id;
+
+                  if (senderbalancebl < int.parse(y[2])) {
+                    String message =
+                        'Dear $sendernamebl, \nYou have no sufficient balance in your wallet.'
+                        'Please recharge.\nThankYou.';
+                    List<String> recipents = [sendernumber.toString()];
+
+                    String _result = await sendSMS(
+                            message: message,
+                            recipients: recipents,
+                            sendDirect: true)
+                        .catchError((onError) {
+                      print(onError);
+                    });
+                  } else if (senderbalancebl >= int.parse(y[2])) {
+                    String mobile = y[1];
+                    String money = y[2];
+
+                    if (y[1].startsWith('984') ||
+                        y[1].startsWith('985') ||
+                        y[1].startsWith('986')) {
+                      // num subtractedbl = senderbalancebl - int.parse(y[2]);
+                      // print(sendernamebl);
+                      // print(subtractedbl);
+                      // await dbref
+                      //     .doc(senderidbl)
+                      //     .update({'balance': subtractedbl});
+                      String number = '*422*$securitycode*$mobile*$money#';
+                      print('topupntc');
+                      launchUrl(Uri(scheme: 'tel', path: number));
+                    } else if (y[1].startsWith('980') ||
+                        y[1].startsWith('981') ||
+                        y[1].startsWith('982')) {
+                      num subtractedbl = senderbalancebl - int.parse(y[2]);
+                      // print(sendernamebl);
+                      // print(subtractedbl);
+                      // await dbref
+                      //     .doc(senderidbl)
+                      //     .update({'balance': subtractedbl});
+                      String number = '*17122*$mobile*$money#';
+                      print('topupncell');
+                      launchUrl(Uri(scheme: 'tel', path: number));
+                    } else {
+                      String message =
+                          'Sorry! The number provided can\'t be top-uped. Please provide a valid number.'
+                          '\nThankYou.';
+                      List<String> recipents = [sendernumber.toString()];
+
+                      String _result = await sendSMS(
+                              message: message,
+                              recipients: recipents,
+                              sendDirect: true)
+                          .catchError((onError) {
+                        print(onError);
+                      });
+                    }
+                  }
+                }
+              });
+            });
+          } else if (y[0] == 'transaction') {
+            await dbref
+                .where('mobilenumber', isEqualTo: y[1])
+                .get()
+                .then((QuerySnapshot querySnapshot) {
+              querySnapshot.docs.forEach((reciever) async {
+                if (reciever.exists) {
+                  print('reciever exist');
+                  String recieverid = await reciever.id;
+                  String recievername = await reciever['name'];
+                  num recieverbalance = await reciever['balance'];
+                  print(recieverid);
+                  print(recievername);
+                  await dbref
+                      .where('mobilenumber', isEqualTo: sendernumber)
+                      .get()
+                      .then((QuerySnapshot querySnapshot) {
+                    querySnapshot.docs.forEach((sender) async {
+                      if (sender.exists) {
+                        print('sender exist');
+                        String sendername = await sender['name'];
+                        num senderbalance = await sender['balance'];
+                        String senderid = await sender.id;
+                        print(senderid);
+                        print(sendername);
+                        if (senderbalance < int.parse(y[2])) {
+                          String message =
+                              'Dear $sendername, \nYou have no sufficient balance in your wallet.'
+                              'Please recharge.\nThankYou.';
+                          List<String> recipents = [sendernumber.toString()];
+
+                          String _result = await sendSMS(
+                                  message: message,
+                                  recipients: recipents,
+                                  sendDirect: true)
+                              .catchError((onError) {
+                            print(onError);
+                          });
+                        } else if (senderbalance >= int.parse(y[2])) {
                           print('transaction');
                           //sender balance should be subtracted by y[2]
                           num subtractedbl = senderbalance - int.parse(y[2]);
@@ -141,20 +213,14 @@ class _HomeState extends State<Home> {
                               .catchError((onError) {
                             print(onError);
                           });
-                        } else if (y[0] == 'topup') {
-                          String mobile = y[1];
-                          String money = y[2];
-                          String number = '*1415*1121212*$mobile*$money#';
-                          print('topup');
-                          launchUrl(Uri(scheme: 'tel', path: number));
                         }
                       }
-                    }
+                    });
                   });
-                });
-              }
+                }
+              });
             });
-          });
+          }
         }
       },
       listenInBackground: false,
