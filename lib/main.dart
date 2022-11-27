@@ -53,20 +53,16 @@ class _HomeState extends State<Home> {
           Permission.phone,
           //add more permission to request here.
         ].request();
-        print(message.address); //+977981******67, sender nubmer
-        print(message.body); //sms text
-        print(message.date);
         sms = message.body.toString();
-        print('data:$sms');
-        var securitycode = '123478';
+        print(message.address);
+        print(message.body);
+        var securitycode = '123478'; // security code for ntc
         var sendernumber = message.address;
         var x = sms;
         var y = x.split(":"); // o/p:[topup, 9865762048, 50]
         if (y.length == 3) {
-          print(y.length);
-          print(x.split(":")); //o/p:9865762048
           String sentmoney = y[2];
-
+          print(y);
           if (y[0] == 'topup') {
             await dbref
                 .where('mobilenumber', isEqualTo: sendernumber)
@@ -74,6 +70,7 @@ class _HomeState extends State<Home> {
                 .then((QuerySnapshot querySnapshot) {
               querySnapshot.docs.forEach((senderbl) async {
                 if (senderbl.exists) {
+                  print('sender exists');
                   String sendernamebl = await senderbl['name'];
                   num senderbalancebl = await senderbl['balance'];
                   String senderidbl = await senderbl.id;
@@ -124,7 +121,6 @@ class _HomeState extends State<Home> {
                           'Sorry! The number provided can\'t be top-uped. Please provide a valid number.'
                           '\nThankYou.';
                       List<String> recipents = [sendernumber.toString()];
-
                       String _result = await sendSMS(
                               message: message,
                               recipients: recipents,
@@ -144,24 +140,18 @@ class _HomeState extends State<Home> {
                 .then((QuerySnapshot querySnapshot) {
               querySnapshot.docs.forEach((reciever) async {
                 if (reciever.exists) {
-                  print('reciever exist');
                   String recieverid = await reciever.id;
                   String recievername = await reciever['name'];
                   num recieverbalance = await reciever['balance'];
-                  print(recieverid);
-                  print(recievername);
                   await dbref
                       .where('mobilenumber', isEqualTo: sendernumber)
                       .get()
                       .then((QuerySnapshot querySnapshot) {
                     querySnapshot.docs.forEach((sender) async {
                       if (sender.exists) {
-                        print('sender exist');
                         String sendername = await sender['name'];
                         num senderbalance = await sender['balance'];
                         String senderid = await sender.id;
-                        print(senderid);
-                        print(sendername);
                         if (senderbalance < int.parse(y[2])) {
                           String message =
                               'Dear $sendername, \nYou have no sufficient balance in your wallet.'
@@ -176,15 +166,10 @@ class _HomeState extends State<Home> {
                             print(onError);
                           });
                         } else if (senderbalance >= int.parse(y[2])) {
-                          print('transaction');
                           //sender balance should be subtracted by y[2]
                           num subtractedbl = senderbalance - int.parse(y[2]);
-                          print(sendername);
-                          print(subtractedbl);
                           //reciever bl added with y[2]
                           num addedbl = recieverbalance + int.parse(y[2]);
-                          print(recievername);
-                          print(addedbl);
                           //update sender balance in firestore
                           await dbref
                               .doc(senderid)
