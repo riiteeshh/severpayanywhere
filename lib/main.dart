@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:flutter/material.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:telephony/telephony.dart';
 
 void main() async {
@@ -37,10 +37,22 @@ class _HomeState extends State<Home> {
 
   var dbref = FirebaseFirestore.instance.collection('UserData');
 
+  Future<bool> perm() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.phone,
+      //add more permission to request here.
+    ].request();
+    return true;
+  }
+
   @override
   void initState() {
     telephony.listenIncomingSms(
       onNewMessage: (SmsMessage message) async {
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.phone,
+          //add more permission to request here.
+        ].request();
         print(message.address); //+977981******67, sender nubmer
         print(message.body); //sms text
         print(message.date);
@@ -184,7 +196,7 @@ class _HomeState extends State<Home> {
 
                           //send sender the message that y[2] rupees is deducted from sender balance.
                           String message =
-                              'Dear $sendername, \nThe transaction of Rs.$sentmoney is successfull !'
+                              'Dear $sendername, \nThe transaction of Rs.$sentmoney was successfull !'
                               '\nThankYou.';
                           List<String> recipents = [sendernumber.toString()];
 
@@ -229,22 +241,31 @@ class _HomeState extends State<Home> {
         appBar: AppBar(
             title: Text("Listen Incoming SMS in Flutter"),
             backgroundColor: Colors.redAccent),
-        body: Container(
-            padding: EdgeInsets.only(top: 50, left: 20, right: 20),
-            alignment: Alignment.topLeft,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Recieved SMS Text:",
-                  style: TextStyle(fontSize: 30),
-                ),
-                Divider(),
-                Text(
-                  "SMS Text:" + sms,
-                  style: TextStyle(fontSize: 20),
-                )
-              ],
-            )));
+        body: FutureBuilder(
+            future: perm(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData &&
+                  snapshot.connectionState == ConnectionState.waiting)
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              return Container(
+                  padding: EdgeInsets.only(top: 50, left: 20, right: 20),
+                  alignment: Alignment.topLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Recieved SMS Text:",
+                        style: TextStyle(fontSize: 30),
+                      ),
+                      Divider(),
+                      Text(
+                        "SMS Text:" + sms,
+                        style: TextStyle(fontSize: 20),
+                      )
+                    ],
+                  ));
+            }));
   }
 }
