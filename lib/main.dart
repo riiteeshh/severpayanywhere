@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:servpayanywhere/recharge.dart';
 import 'package:telephony/telephony.dart';
 
 void main() async {
@@ -222,7 +223,16 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => Rechargenumber())),
+            icon: Icon(Icons.add),
+            label: Text('ADD')),
         appBar: AppBar(
             title: Text("Listen Incoming SMS in Flutter"),
             backgroundColor: Colors.redAccent),
@@ -251,6 +261,8 @@ class _HomeState extends State<Home> {
                       )
                     ],
                   ));
-            }));
+            }),
+      ),
+    );
   }
 }
