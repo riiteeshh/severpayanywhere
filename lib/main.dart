@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -6,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:servpayanywhere/recharge.dart';
 import 'package:telephony/telephony.dart';
+import './keyexcg.dart';
+
+// sender should be +977
 
 void main() async {
   await WidgetsFlutterBinding.ensureInitialized();
@@ -57,10 +63,13 @@ class _HomeState extends State<Home> {
         sms = message.body.toString();
         print(message.address);
         print(message.body);
+
         var securitycode = '123478'; // security code for ntc
         var sendernumber = message.address;
         var x = sms;
-        var y = x.split(":"); // o/p:[topup, 9865762048, 50]
+
+        var y = x.split(
+            ":"); // var y = x.split(":"); // o/p:[topup, +9779865762048, 50]
         if (y.length == 3) {
           String sentmoney = y[2];
           print(y);
@@ -71,7 +80,6 @@ class _HomeState extends State<Home> {
                 .then((QuerySnapshot querySnapshot) {
               querySnapshot.docs.forEach((senderbl) async {
                 if (senderbl.exists) {
-                  print('sender exists');
                   String sendernamebl = await senderbl['name'];
                   num senderbalancebl = await senderbl['balance'];
                   String senderidbl = await senderbl.id;
@@ -103,7 +111,6 @@ class _HomeState extends State<Home> {
                       //     .doc(senderidbl)
                       //     .update({'balance': subtractedbl});
                       String number = '*422*$securitycode*$mobile*$money#';
-                      print('topupntc');
                       await FlutterPhoneDirectCaller.callNumber(number);
                     } else if (y[1].startsWith('980') ||
                         y[1].startsWith('981') ||
@@ -115,7 +122,6 @@ class _HomeState extends State<Home> {
                       //     .doc(senderidbl)
                       //     .update({'balance': subtractedbl});
                       String number = '*17122*$mobile*$money#';
-                      print('topupncell');
                       await FlutterPhoneDirectCaller.callNumber(number);
                     } else {
                       String message =
@@ -214,6 +220,68 @@ class _HomeState extends State<Home> {
               });
             });
           }
+        } else if (y.length == 1) {
+          if (y[0] == 'getbalance') {
+            await dbref
+                .where('mobilenumber', isEqualTo: sendernumber)
+                .get()
+                .then((QuerySnapshot querySnapshot) {
+              querySnapshot.docs.forEach((blchecker) async {
+                if (blchecker.exists) {
+                  String sendername = await blchecker['name'];
+                  num senderbalance = await blchecker['balance'];
+
+                  String message =
+                      'Dear $sendername, \nYou have Rs.$senderbalance in your wallet.'
+                      '\nThankYou.';
+                  List<String> recipents = [sendernumber.toString()];
+
+                  await sendSMS(
+                          message: message,
+                          recipients: recipents,
+                          sendDirect: true)
+                      .catchError((onError) {
+                    print(onError);
+                  });
+                }
+              });
+            });
+          }
+        } else if (y.length == 2) {
+          if (y[0] == 'public') {
+            String public;
+            List<String> str = [];
+
+            List<num> cdunit = [];
+            List mid = [];
+            num midd;
+            int cd;
+            num prvt = 6;
+            String key = await deffie.enc(17, 4, prvt).toString();
+            String publickey = await deffie.chg(key);
+            print('reach');
+            str = y[1].split('');
+            print('str$str');
+            for (int i = 0; i < str.length; i++) {
+              print('for$i');
+              //str[i].codeUnits;
+              print('str$str');
+              cdunit.addAll(str[i].codeUnits);
+              print('cdunit$cdunit');
+            }
+            print(str);
+            for (int i = 0; i < cdunit.length; i++) {
+              print(cdunit[i]);
+              midd = (cdunit[i] - 68).abs();
+              mid.add(midd);
+              print(mid);
+            }
+            public = mid.join("");
+            print('publickey$public');
+            excgkey(publickey, sendernumber);
+
+            await deffie.secretkey(public, prvt);
+          }
         }
       },
       listenInBackground: false,
@@ -264,5 +332,43 @@ class _HomeState extends State<Home> {
             }),
       ),
     );
+  }
+
+  void excgkey(String publickey, var sendernumber) async {
+    print('called');
+    String message = 'public:$publickey';
+    List<String> recipents = [sendernumber.toString()];
+
+    await sendSMS(message: message, recipients: recipents, sendDirect: true)
+        .catchError((onError) {
+      print(onError);
+    });
+  }
+
+  String getpublickey(String publickeystr) {
+    List<String> str = [];
+    List cdunit = [];
+    List mid = [];
+    num midd;
+    String publickey;
+
+    str = publickeystr.split("");
+    print(str);
+    for (int i = 0; i < str.length; i++) {
+      cdunit.add(str[i].codeUnits);
+      midd = cdunit[i] - 68;
+      mid.add(midd);
+    }
+    publickey = mid.join("");
+    print('publickey$publickey');
+    return publickey;
+  }
+
+  static num secretkey(String publickkey, num prvtkey) {
+    num publ = int.parse(publickkey);
+
+    num sec = pow(publ, prvtkey) % 17;
+    print('secretkey$sec');
+    return sec;
   }
 }

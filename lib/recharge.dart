@@ -181,7 +181,7 @@ class _RechargenumberState extends State<Rechargenumber> {
               '\nThankYou.';
           List<String> recipents1 = [mobile];
 
-          String _result1 = await sendSMS(
+          await sendSMS(
                   message: message1, recipients: recipents1, sendDirect: true)
               .catchError((onError) {
             print(onError);
