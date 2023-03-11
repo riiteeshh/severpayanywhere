@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:flutter/material.dart';
+import 'package:encryptor/encryptor.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:servpayanywhere/recharge.dart';
 import 'package:telephony/telephony.dart';
@@ -61,166 +62,187 @@ class _HomeState extends State<Home> {
           //add more permission to request here.
         ].request();
         sms = message.body.toString();
+        num? secrett;
+
         print(message.address);
         print(message.body);
 
         var securitycode = '123478'; // security code for ntc
         var sendernumber = message.address;
         var x = sms;
+        var y;
 
-        var y = x.split(
-            ":"); // var y = x.split(":"); // o/p:[topup, +9779865762048, 50]
-        if (y.length == 3) {
-          String sentmoney = y[2];
-          print(y);
-          if (y[0] == 'topup') {
-            await dbref
-                .where('mobilenumber', isEqualTo: sendernumber)
-                .get()
-                .then((QuerySnapshot querySnapshot) {
-              querySnapshot.docs.forEach((senderbl) async {
-                if (senderbl.exists) {
-                  String sendernamebl = await senderbl['name'];
-                  num senderbalancebl = await senderbl['balance'];
-                  String senderidbl = await senderbl.id;
+        y = x.split(":");
 
-                  if (senderbalancebl < int.parse(y[2])) {
-                    String message =
-                        'Dear $sendernamebl, \nYou have no sufficient balance in your wallet.'
-                        'Please recharge.\nThankYou.';
-                    List<String> recipents = [sendernumber.toString()];
+        // var y = x.split(":"); // o/p:[topup, +9779865762048, 50]
+        if (y.length == 1) {
+          if (y[0].length > 15) {
+            // print(y.length);
 
-                    String _result = await sendSMS(
-                            message: message,
-                            recipients: recipents,
-                            sendDirect: true)
-                        .catchError((onError) {
-                      print(onError);
-                    });
-                  } else if (senderbalancebl >= int.parse(y[2])) {
-                    String mobile = y[1];
-                    String money = y[2];
+            var decrypted =
+                await Encryptor.decrypt('16', message.body.toString());
+            print(decrypted);
+            y = decrypted.toString().split(":");
+            print('yvalue:$y');
+            if (y.length == 3) {
+              String sentmoney = y[2];
+              print(y);
+              if (y[0] == 'topup') {
+                print('here');
+                await dbref
+                    .where('mobilenumber', isEqualTo: sendernumber)
+                    .get()
+                    .then((QuerySnapshot querySnapshot) {
+                  querySnapshot.docs.forEach((senderbl) async {
+                    if (senderbl.exists) {
+                      String sendernamebl = await senderbl['name'];
+                      num senderbalancebl = await senderbl['balance'];
+                      String senderidbl = await senderbl.id;
 
-                    if (y[1].startsWith('984') ||
-                        y[1].startsWith('985') ||
-                        y[1].startsWith('986')) {
-                      // num subtractedbl = senderbalancebl - int.parse(y[2]);
-                      // print(sendernamebl);
-                      // print(subtractedbl);
-                      // await dbref
-                      //     .doc(senderidbl)
-                      //     .update({'balance': subtractedbl});
-                      String number = '*422*$securitycode*$mobile*$money#';
-                      await FlutterPhoneDirectCaller.callNumber(number);
-                    } else if (y[1].startsWith('980') ||
-                        y[1].startsWith('981') ||
-                        y[1].startsWith('982')) {
-                      num subtractedbl = senderbalancebl - int.parse(y[2]);
-                      // print(sendernamebl);
-                      // print(subtractedbl);
-                      // await dbref
-                      //     .doc(senderidbl)
-                      //     .update({'balance': subtractedbl});
-                      String number = '*17122*$mobile*$money#';
-                      await FlutterPhoneDirectCaller.callNumber(number);
-                    } else {
-                      String message =
-                          'Sorry! The number provided can\'t be top-uped. Please provide a valid number.'
-                          '\nThankYou.';
-                      List<String> recipents = [sendernumber.toString()];
-                      String _result = await sendSMS(
-                              message: message,
-                              recipients: recipents,
-                              sendDirect: true)
-                          .catchError((onError) {
-                        print(onError);
-                      });
-                    }
-                  }
-                }
-              });
-            });
-          } else if (y[0] == 'transaction') {
-            await dbref
-                .where('mobilenumber', isEqualTo: y[1])
-                .get()
-                .then((QuerySnapshot querySnapshot) {
-              querySnapshot.docs.forEach((reciever) async {
-                if (reciever.exists) {
-                  String recieverid = await reciever.id;
-                  String recievername = await reciever['name'];
-                  num recieverbalance = await reciever['balance'];
-                  await dbref
-                      .where('mobilenumber', isEqualTo: sendernumber)
-                      .get()
-                      .then((QuerySnapshot querySnapshot) {
-                    querySnapshot.docs.forEach((sender) async {
-                      if (sender.exists) {
-                        String sendername = await sender['name'];
-                        num senderbalance = await sender['balance'];
-                        String senderid = await sender.id;
-                        if (senderbalance < int.parse(y[2])) {
+                      if (senderbalancebl < int.parse(y[2])) {
+                        String message =
+                            'Dear $sendernamebl, \nYou have no sufficient balance in your wallet.'
+                            'Please recharge.\nThankYou.';
+                        List<String> recipents = [sendernumber.toString()];
+
+                        String _result = await sendSMS(
+                                message: message,
+                                recipients: recipents,
+                                sendDirect: true)
+                            .catchError((onError) {
+                          print(onError);
+                        });
+                      } else if (senderbalancebl >= int.parse(y[2])) {
+                        String mobile = y[1];
+                        String money = y[2];
+
+                        if (y[1].startsWith('984') ||
+                            y[1].startsWith('985') ||
+                            y[1].startsWith('986')) {
+                          // num subtractedbl = senderbalancebl - int.parse(y[2]);
+                          // print(sendernamebl);
+                          // print(subtractedbl);
+                          // await dbref
+                          //     .doc(senderidbl)
+                          //     .update({'balance': subtractedbl});
+                          String number = '*422*$securitycode*$mobile*$money#';
+                          await FlutterPhoneDirectCaller.callNumber(number);
+                        } else if (y[1].startsWith('980') ||
+                            y[1].startsWith('981') ||
+                            y[1].startsWith('982')) {
+                          num subtractedbl = senderbalancebl - int.parse(y[2]);
+                          // print(sendernamebl);
+                          // print(subtractedbl);
+                          // await dbref
+                          //     .doc(senderidbl)
+                          //     .update({'balance': subtractedbl});
+                          String number = '*17122*$mobile*$money#';
+                          await FlutterPhoneDirectCaller.callNumber(number);
+                        } else {
                           String message =
-                              'Dear $sendername, \nYou have no sufficient balance in your wallet.'
-                              'Please recharge.\nThankYou.';
+                              'Sorry! The number provided can\'t be top-uped. Please provide a valid number.'
+                              '\nThankYou.';
                           List<String> recipents = [sendernumber.toString()];
-
                           String _result = await sendSMS(
                                   message: message,
                                   recipients: recipents,
-                                  sendDirect: true)
-                              .catchError((onError) {
-                            print(onError);
-                          });
-                        } else if (senderbalance >= int.parse(y[2])) {
-                          //sender balance should be subtracted by y[2]
-                          num subtractedbl = senderbalance - int.parse(y[2]);
-                          //reciever bl added with y[2]
-                          num addedbl = recieverbalance + int.parse(y[2]);
-                          //update sender balance in firestore
-                          await dbref
-                              .doc(senderid)
-                              .update({'balance': subtractedbl});
-                          //updated reciever balance in firestore
-                          await dbref
-                              .doc(recieverid)
-                              .update({'balance': addedbl});
-
-                          //send sender the message that y[2] rupees is deducted from sender balance.
-                          String message =
-                              'Dear $sendername, \nThe transaction of Rs.$sentmoney was successfull !'
-                              '\nThankYou.';
-                          List<String> recipents = [sendernumber.toString()];
-
-                          String _result = await sendSMS(
-                                  message: message,
-                                  recipients: recipents,
-                                  sendDirect: true)
-                              .catchError((onError) {
-                            print(onError);
-                          });
-                          // send reciever the message that y[2] rupees is addded to reciever balance.
-                          String message1 =
-                              'Dear $recievername, \nYou have recieved Rs.$sentmoney in your wallet from $sendernumber.'
-                              '\nThankYou.';
-                          List<String> recipents1 = [y[1].toString()];
-
-                          String _result1 = await sendSMS(
-                                  message: message1,
-                                  recipients: recipents1,
                                   sendDirect: true)
                               .catchError((onError) {
                             print(onError);
                           });
                         }
                       }
-                    });
+                    }
                   });
-                }
-              });
-            });
+                });
+              } else if (y[0] == 'transaction') {
+                await dbref
+                    .where('mobilenumber', isEqualTo: y[1])
+                    .get()
+                    .then((QuerySnapshot querySnapshot) {
+                  querySnapshot.docs.forEach((reciever) async {
+                    if (reciever.exists) {
+                      String recieverid = await reciever.id;
+                      String recievername = await reciever['name'];
+                      num recieverbalance = await reciever['balance'];
+                      await dbref
+                          .where('mobilenumber', isEqualTo: sendernumber)
+                          .get()
+                          .then((QuerySnapshot querySnapshot) {
+                        querySnapshot.docs.forEach((sender) async {
+                          if (sender.exists) {
+                            String sendername = await sender['name'];
+                            num senderbalance = await sender['balance'];
+                            String senderid = await sender.id;
+                            if (senderbalance < int.parse(y[2])) {
+                              String message =
+                                  'Dear $sendername, \nYou have no sufficient balance in your wallet.'
+                                  'Please recharge.\nThankYou.';
+                              List<String> recipents = [
+                                sendernumber.toString()
+                              ];
+
+                              String _result = await sendSMS(
+                                      message: message,
+                                      recipients: recipents,
+                                      sendDirect: true)
+                                  .catchError((onError) {
+                                print(onError);
+                              });
+                            } else if (senderbalance >= int.parse(y[2])) {
+                              //sender balance should be subtracted by y[2]
+                              num subtractedbl =
+                                  senderbalance - int.parse(y[2]);
+                              //reciever bl added with y[2]
+                              num addedbl = recieverbalance + int.parse(y[2]);
+                              //update sender balance in firestore
+                              await dbref
+                                  .doc(senderid)
+                                  .update({'balance': subtractedbl});
+                              //updated reciever balance in firestore
+                              await dbref
+                                  .doc(recieverid)
+                                  .update({'balance': addedbl});
+
+                              //send sender the message that y[2] rupees is deducted from sender balance.
+                              String message =
+                                  'Dear $sendername, \nThe transaction of Rs.$sentmoney was successfull !'
+                                  '\nThankYou.';
+                              List<String> recipents = [
+                                sendernumber.toString()
+                              ];
+
+                              String _result = await sendSMS(
+                                      message: message,
+                                      recipients: recipents,
+                                      sendDirect: true)
+                                  .catchError((onError) {
+                                print(onError);
+                              });
+                              // send reciever the message that y[2] rupees is addded to reciever balance.
+                              String message1 =
+                                  'Dear $recievername, \nYou have recieved Rs.$sentmoney in your wallet from $sendernumber.'
+                                  '\nThankYou.';
+                              List<String> recipents1 = [y[1].toString()];
+
+                              String _result1 = await sendSMS(
+                                      message: message1,
+                                      recipients: recipents1,
+                                      sendDirect: true)
+                                  .catchError((onError) {
+                                print(onError);
+                              });
+                            }
+                          }
+                        });
+                      });
+                    }
+                  });
+                });
+              }
+            }
           }
-        } else if (y.length == 1) {
+
           if (y[0] == 'getbalance') {
             await dbref
                 .where('mobilenumber', isEqualTo: sendernumber)
@@ -280,7 +302,8 @@ class _HomeState extends State<Home> {
             print('publickey$public');
             excgkey(publickey, sendernumber);
 
-            await deffie.secretkey(public, prvt);
+            secrett = await deffie.secretkey(public, prvt);
+            print('secret:$secrett');
           }
         }
       },
