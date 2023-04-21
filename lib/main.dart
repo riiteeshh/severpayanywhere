@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -87,6 +88,7 @@ class _HomeState extends State<Home> {
             if (y.length == 3) {
               String sentmoney = y[2];
               print(y);
+
               if (y[0] == 'topup') {
                 print('here');
                 await dbref
@@ -203,6 +205,46 @@ class _HomeState extends State<Home> {
                               await dbref
                                   .doc(recieverid)
                                   .update({'balance': addedbl});
+
+                              Map<String, dynamic> sentdataa = {
+                                'amount': sentmoney,
+                                'date': DateTime.now().toString(),
+                                'to': y[1],
+                              };
+                              Map<String, dynamic> recieveddata = {
+                                'amount': sentmoney,
+                                'date': DateTime.now().toString(),
+                                'from': sendernumber,
+                              };
+
+                              // dbref.doc(senderid).update({
+                              //   'date': FieldValue.arrayUnion([DateTime.now()])
+                              // });
+
+                              // await dbref
+                              //     .doc(recieverid)
+                              //     .update({'recieved': recieveddata});
+                              var datasss = await dbref.doc(senderid).get();
+                              print(datasss['sent']);
+                              List dataaddsent = [];
+                              dataaddsent.addAll(datasss['sent']);
+                              dataaddsent.add(sentdataa);
+                              print(dataaddsent);
+
+                              await dbref
+                                  .doc(senderid)
+                                  .update({'sent': dataaddsent});
+                              //ldshad
+
+                              var datassr = await dbref.doc(recieverid).get();
+                              print(datassr['recieved']);
+                              List dataaddrecieved = [];
+                              dataaddrecieved.addAll(datassr['recieved']);
+                              dataaddrecieved.add(recieveddata);
+                              print(dataaddrecieved);
+                              await dbref
+                                  .doc(recieverid)
+                                  .update({'recieved': dataaddrecieved});
 
                               //send sender the message that y[2] rupees is deducted from sender balance.
                               String message =
