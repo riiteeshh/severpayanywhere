@@ -158,25 +158,34 @@ class _HomeState extends State<Home> {
                   });
                 });
               } else if (y[0] == 'transaction') {
+                print('transaction');
                 await dbref
                     .where('mobilenumber', isEqualTo: y[1])
                     .get()
                     .then((QuerySnapshot querySnapshot) {
                   querySnapshot.docs.forEach((reciever) async {
                     if (reciever.exists) {
+                      print('reciever exists');
                       String recieverid = await reciever.id;
                       String recievername = await reciever['name'];
                       num recieverbalance = await reciever['balance'];
+                      print(
+                          'reciever details $recieverid,$recievername,$recieverbalance');
                       await dbref
                           .where('mobilenumber', isEqualTo: sendernumber)
                           .get()
                           .then((QuerySnapshot querySnapshot) {
                         querySnapshot.docs.forEach((sender) async {
                           if (sender.exists) {
+                            print('sender exist');
                             String sendername = await sender['name'];
                             num senderbalance = await sender['balance'];
                             String senderid = await sender.id;
+                            print(
+                                'sender details $senderid,$senderbalance,$senderid');
+
                             if (senderbalance < int.parse(y[2])) {
+                              print('reached no balance');
                               String message =
                                   'Dear $sendername, \nYou have no sufficient balance in your wallet.'
                                   'Please recharge.\nThankYou.';
@@ -192,9 +201,11 @@ class _HomeState extends State<Home> {
                                 print(onError);
                               });
                             } else if (senderbalance >= int.parse(y[2])) {
+                              print('reached balalnce available');
                               //sender balance should be subtracted by y[2]
                               num subtractedbl =
                                   senderbalance - int.parse(y[2]);
+                              print('subt:$subtractedbl');
                               //reciever bl added with y[2]
                               num addedbl = recieverbalance + int.parse(y[2]);
                               //update sender balance in firestore
@@ -216,14 +227,7 @@ class _HomeState extends State<Home> {
                                 'date': DateTime.now().toString(),
                                 'from': sendernumber,
                               };
-
-                              // dbref.doc(senderid).update({
-                              //   'date': FieldValue.arrayUnion([DateTime.now()])
-                              // });
-
-                              // await dbref
-                              //     .doc(recieverid)
-                              //     .update({'recieved': recieveddata});
+                              print('reacehed statement sent');
                               var datasss = await dbref.doc(senderid).get();
                               print(datasss['sent']);
                               List dataaddsent = [];
@@ -235,6 +239,7 @@ class _HomeState extends State<Home> {
                                   .doc(senderid)
                                   .update({'sent': dataaddsent});
                               //ldshad
+                              print('reacehed statement recieved');
 
                               var datassr = await dbref.doc(recieverid).get();
                               print(datassr['recieved']);
@@ -245,6 +250,7 @@ class _HomeState extends State<Home> {
                               await dbref
                                   .doc(recieverid)
                                   .update({'recieved': dataaddrecieved});
+                              print('reached messaging');
 
                               //send sender the message that y[2] rupees is deducted from sender balance.
                               String message =
