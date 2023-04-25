@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:math';
 
-class deffie {
-  static num enc(num p, num q, num prvt) {
-    num A;
+import 'package:servpayanywhere/sharedpref.dart';
 
-    A = pow(q, prvt) % p;
+class deffie {
+  static BigInt enc(BigInt p, BigInt q, num prvt) {
+    BigInt A;
+    // num A;
+    A = ((q) ^ BigInt.from(prvt)) % p;
+    // A = pow(q, prvt) % p;
     print('publ$A');
     return A;
   }
@@ -48,13 +51,16 @@ class deffie {
     return publickey;
   }
 
-  static num secretkey(String publickkey, num prvtkey) {
+  static Future<BigInt> secretkey(String publickkey, num prvtkey) async {
     num publ = int.parse(publickkey);
     print(publ);
     print(prvtkey);
-
-    num sec = pow(publ, prvtkey) % 17;
+    BigInt sec =
+        ((BigInt.from(publ)) ^ BigInt.from(prvtkey)) % BigInt.from(15485863);
+    //num sec = pow(publ, prvtkey) % 919;
     print('secretkey$sec');
+    await sharedpref.cleardata();
+    await sharedpref.savedata('secretkey', sec.toString());
     return sec;
   }
 }
