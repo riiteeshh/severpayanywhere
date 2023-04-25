@@ -369,7 +369,8 @@ class _HomeState extends State<Home> {
                     List mid = [];
                     num midd;
                     int cd;
-                    num prvt = 6;
+                    num prvt =
+                        10006; // we used 6 //then used 106 //then we used 10006
                     String key = await deffie
                         .enc(BigInt.from(15485863), BigInt.from(32452867), prvt)
                         .toString(); //for bigint
